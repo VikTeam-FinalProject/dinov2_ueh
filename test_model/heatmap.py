@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    model = vit_large(
+    model = vit_small(
             patch_size=14,
             img_size=526,
             init_values=1.0,
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     )
     HOME = os.getcwd()
 
-    MODEL_PATH = os.path.join(parent_dir,"model", 'dinov2_vitl14_pretrain.pth')
+    MODEL_PATH = os.path.join(parent_dir,"model", 'dinov2_vits14_pretrain.pth')
     print(MODEL_PATH)
     model.load_state_dict(torch.load(MODEL_PATH, map_location='cuda:0'))
     for p in model.parameters():
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     model.to(device)
     model.eval()
 
-    img = Image.open('cow.jpg')
+    img = Image.open('lehoi.jpg')
     img = img.convert('RGB')
     transform = pth_transforms.Compose([
         pth_transforms.Resize(image_size),
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     print(img.shape)
 
     attentions = model.get_last_self_attention(img.to(device))
-
+    print('attn shape ', attentions.shape)
     nh = attentions.shape[1] # number of head
 
     # we keep only the output patch attention
