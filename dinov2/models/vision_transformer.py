@@ -351,6 +351,7 @@ def init_weights_vit_timm(module: nn.Module, name: str = ""):
 
 
 def vit_small(patch_size=16, num_register_tokens=0, **kwargs):
+    print('Initializing ViT small model frommm local')
     model = DinoVisionTransformer(
         patch_size=patch_size,
         embed_dim=384,

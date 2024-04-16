@@ -37,7 +37,9 @@ from PIL import Image
 parent_dir = Path("model").resolve().parent.parent
 
 sys.path.append(str(parent_dir))
-print(sys.path)
+strr = '\n'.join(sys.path)
+sys.path.remove('/home/thekhoi/anaconda3/envs/env_dinoconda/lib/python3.9/site-packages/dinov2-0.0.1-py3.9.egg')
+print(strr)
 from dinov2.models.vision_transformer import vit_small, vit_large
 
 
@@ -45,20 +47,21 @@ if __name__ == '__main__':
     image_size = (952, 952)
     output_dir = 'output'
     patch_size = 14
-
+    num_register_tokens = 4
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
+    print("init model")
     model = vit_small(
             patch_size=14,
             img_size=526,
             init_values=1.0,
+            num_register_tokens=num_register_tokens,
             #ffn_layer="mlp",
             block_chunks=0
     )
     HOME = os.getcwd()
 
-    MODEL_PATH = os.path.join(parent_dir,"model", 'dinov2_vits14_pretrain.pth')
-    print(MODEL_PATH)
+    MODEL_PATH = os.path.join(parent_dir,"model", 'dinov2_vits14_reg4_pretrain.pth')
+    print('model path is: ', MODEL_PATH)
     model.load_state_dict(torch.load(MODEL_PATH, map_location='cuda:0'))
     for p in model.parameters():
         p.requires_grad = False
@@ -66,7 +69,7 @@ if __name__ == '__main__':
     model.to(device)
     model.eval()
 
-    img = Image.open('lehoi.jpg')
+    img = Image.open('/home/thekhoi/futme/RTD-ueh/object_localiztation/LOST/examples/VOC07_000236.jpg')
     img = img.convert('RGB')
     transform = pth_transforms.Compose([
         pth_transforms.Resize(image_size),
@@ -84,7 +87,8 @@ if __name__ == '__main__':
     h_featmap = img.shape[-1] // patch_size
 
     print(img.shape)
-
+    # print('model ', model)
+    # print(dir(model))
     attentions = model.get_last_self_attention(img.to(device))
     print('attn shape ', attentions.shape)
     nh = attentions.shape[1] # number of head
@@ -95,8 +99,8 @@ if __name__ == '__main__':
     # weird: one pixel gets high attention over all heads?
     print(torch.max(attentions, dim=1))
     attentions[:, 283] = 0
-
-    attentions = attentions.reshape(nh, w_featmap, h_featmap)
+    print('attn shape: ', attentions.shape)
+    attentions = attentions[:, :-num_register_tokens].reshape(nh, w_featmap, h_featmap)
     attentions = nn.functional.interpolate(attentions.unsqueeze(0), scale_factor=patch_size, mode="nearest")[0].cpu().numpy()
 
     # save attentions heatmaps
